@@ -55,10 +55,13 @@ Jsprice:41
     public class Verify_Msg_Obj
     {
         public string OrderID { set; get; } // 系统内部码订单号 是 VARCHAR(32)
-        public string BOOKID { set; get; } //系统内部码  是 Varchar(32) 审核结果 State 是 int 1:审核同意 2：审核驳回 3：待审核
-        public string StateMsg { set; get; } //备注 StateMsg 否 Varchar 审核结果驳回时，必须填写驳回理由，在前台展示
-
-
+        public List<Verify_Msg_Obj_Item> ItemsList { set; get; }
+    }
+    public class Verify_Msg_Obj_Item
+    {
+        public string BOOKID { set; get; } //系统内部码  是 Varchar(32) 审核结果
+        public string State { set; get; }   //State 是 int 1:审核同意 2：审核驳回 3：待审核
+        public string? StateMsg { set; get; } //备注 StateMsg 否 Varchar 审核结果驳回时，必须填写驳回理由，在前台展示
 
     }
 }
