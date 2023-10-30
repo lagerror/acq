@@ -1,5 +1,6 @@
 ﻿using acq.Model;
 using Microsoft.AspNetCore.Mvc;
+using Oracle.ManagedDataAccess.Client;
 using System.Data.SqlClient;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -14,29 +15,30 @@ namespace acq.Controllers
         private string connStr = "";
         public CReader(IConfiguration configuration) {
             _configuration = configuration;
-            connStr = _configuration["Union.ConnStr"].ToString();
+            connStr = _configuration["Union:ConnStr"].ToString();
         }
         // GET: api/<CReader>
+        /// <summary>
+        /// {
+        ///  "CardNo":"2022006139",
+        ///   "PWD":"pwd"
+        ///  }
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         [HttpGet]
         [Route("login")]
-        public Msg Get([FromBody] string value)
+        public Msg Login(string CardNo,string PWD )
         {
 
             Msg msg = new Msg();
             msg.Code = -1;
             Reader_Login_Req req = new Reader_Login_Req();
-            //转换参数
-            try 
-            {
-               req= Newtonsoft.Json.JsonConvert.DeserializeObject<Reader_Login_Req>(value);
-            }
-            catch(Exception ex)
-            {
-                msg.Result = String.Format("参数转换错误：{0}", ex.Message);
-                return msg;
-            }
+            req.CardNo = CardNo;
+            req.PWD= PWD;
+            
             //参数为空
-            if(req==null | string.IsNullOrEmpty(req.CardNo) | string.IsNullOrEmpty(req.Password))
+            if(req==null | string.IsNullOrEmpty(req.CardNo) | string.IsNullOrEmpty(req.PWD))
             {
                 msg.Result = String.Format("参数设置错误：{0}", "参数为空");
                 return msg;
@@ -44,21 +46,22 @@ namespace acq.Controllers
             //读取数据库
             try
             {
-                using (SqlConnection conn = new SqlConnection(connStr))
+                using (OracleConnection conn = new OracleConnection(connStr))
                 {
                     conn.Open();
-                    using (SqlCommand comm = conn.CreateCommand())
-                    {
-                        string commStr = "select curlocal,barcode from holding left join biblios on biblios.bookrecno = holding.bookrecno where isbn = @isbn and holding.orglib = 'CD'";
+                    using (OracleCommand comm = conn.CreateCommand())
+                    {   //'2022006139'
+                        string commStr = "select xh,xm,sfzjh,xqmc,zymc,bjmc,xmmc from usr_zsj.v_xx_xsxx where xh=:xh and sfzx='是'";
                         comm.CommandText = commStr;
-                        SqlParameter[] pars = new SqlParameter[] {
-                        new SqlParameter("@isbn",req.CardNo)
-                    };
-                        SqlDataReader reader = comm.ExecuteReader();
+                        OracleParameter[] pars = new OracleParameter[] {
+                            new OracleParameter(":xh",req.CardNo)
+                        };
+                        comm.Parameters.AddRange(pars);
+                        OracleDataReader reader = comm.ExecuteReader();
                         string result = "";
                         while (reader.Read())
                         {
-                            result += String.Format("条码：{0}；馆藏地：{1} \r\n", reader["barcode"].ToString(), reader["curlocal"].ToString());
+                            result += String.Format("条码：{0}；馆藏地：{1} \r\n", reader[1].ToString(), reader[0].ToString());
                         }
                         if (result == "")
                         {
@@ -83,29 +86,6 @@ namespace acq.Controllers
             return msg;
         }
 
-        // GET api/<CReader>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/<CReader>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<CReader>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<CReader>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
+       
     }
 }

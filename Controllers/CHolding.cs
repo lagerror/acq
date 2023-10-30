@@ -1,6 +1,8 @@
 ﻿using acq.Model;
 using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
+using System.Data.OracleClient;
+using Oracle.ManagedDataAccess.Client;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -14,7 +16,7 @@ namespace acq.Controllers
         private string connStr;
         public CHolding(IConfiguration configuration) { 
             _configuration = configuration;
-            connStr=_configuration["Interlib.ConnStr"].ToString();
+            connStr=_configuration["Interlib:ConnStr"].ToString();
         }
         // GET: api/<CHolding>
         [HttpGet]
@@ -57,17 +59,18 @@ namespace acq.Controllers
 
             try
             {
-                using (SqlConnection conn = new SqlConnection(connStr))
+                using (OracleConnection conn = new OracleConnection(connStr))
                 {
                     conn.Open();
-                    using (SqlCommand comm = conn.CreateCommand())
+                    using (OracleCommand comm = conn.CreateCommand())
                     {
-                        string commStr = "select curlocal,barcode from holding left join biblios on biblios.bookrecno = holding.bookrecno where isbn = @isbn and holding.orglib = 'CD'";
+                        string commStr = "select curlocal,barcode from holding left join biblios on biblios.bookrecno = holding.bookrecno where isbn = :isbn and holding.orglib = 'CD'";
                         comm.CommandText = commStr;
-                        SqlParameter[] pars = new SqlParameter[] {
-                        new SqlParameter("@isbn",req.ISBN)
-                    };
-                        SqlDataReader reader = comm.ExecuteReader();
+                        OracleParameter[] pars = new OracleParameter[] {
+                            new OracleParameter("isbn",req.ISBN)
+                        };
+                        comm.Parameters.AddRange(pars);
+                        OracleDataReader reader = comm.ExecuteReader();
                         string result = "";
                         while (reader.Read())
                         {

@@ -6,7 +6,7 @@
     public class Reader_Login_Req
     {
         public string CardNo { get; set; }    //读者学号
-        public string Password { get; set; } //md5（密码+key）加密
+        public string PWD{ get; set; } //md5（密码+key）加密
     }
     /*
      成功：{Code=1,Result=成功,Obj=usermodel}
