@@ -17,7 +17,7 @@
     /// </summary>
     public class Reader_Login_Msg_Obj
     {
-        public int CardNo { get; set; } //用户唯一标识
+        public string CardNo { get; set; } //用户唯一标识
         public string UserName { get; set; }    //Varchar(32) 用户姓名
         public string? Department {set;get; } //读者所在院系
         public string? Job { get; set; }  //读者职务

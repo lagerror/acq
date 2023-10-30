@@ -17,18 +17,15 @@ namespace acq.Controllers
             _configuration = configuration;
             connStr = _configuration["Union:ConnStr"].ToString();
         }
-        // GET: api/<CReader>
         /// <summary>
-        /// {
-        ///  "CardNo":"2022006139",
-        ///   "PWD":"pwd"
-        ///  }
+        /// 
         /// </summary>
-        /// <param name="value"></param>
+        /// <param name="CardNo">学号</param>
+        /// <param name="PWD">密码</param>
         /// <returns></returns>
         [HttpGet]
         [Route("login")]
-        public Msg Login(string CardNo,string PWD )
+        public Msg Login(string CardNo= "2022006139", string PWD = "2022006139" )
         {
 
             Msg msg = new Msg();
@@ -57,11 +54,15 @@ namespace acq.Controllers
                             new OracleParameter(":xh",req.CardNo)
                         };
                         comm.Parameters.AddRange(pars);
-                        OracleDataReader reader = comm.ExecuteReader();
+                        OracleDataReader rd = comm.ExecuteReader();
                         string result = "";
-                        while (reader.Read())
+                        while (rd.Read())
                         {
-                            result += String.Format("条码：{0}；馆藏地：{1} \r\n", reader[1].ToString(), reader[0].ToString());
+                            Reader_Login_Msg_Obj obj=new Reader_Login_Msg_Obj();
+                            obj.CardNo =  rd["xh"].ToString();
+                            obj.UserName = rd["xm"].ToString();
+                            obj.Department = rd["xqmc"] + "|" + rd["zymc"] + "|" + rd["bjmc"];
+                            obj.Job = rd["xmmc"].ToString();
                         }
                         if (result == "")
                         {
