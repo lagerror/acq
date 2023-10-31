@@ -19,7 +19,7 @@ namespace acq.Tools
             bHash = md.ComputeHash(bValue);
             md.Clear();
             md.Dispose();
-            for(int i = 0;i< bValue.Length; i++)
+            for(int i = 0;i< bHash.Length; i++)
             {
                 sign += bHash[i].ToString("X").PadLeft(2, '0');
             }

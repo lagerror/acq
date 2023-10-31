@@ -15,24 +15,33 @@ namespace acq.Controllers
         private IConfiguration _configuration;
         private string connStr = "";
         private string signKey = "";
+        private string orgId = "";
+        
         public CReader(IConfiguration configuration) {
             _configuration = configuration;
             connStr = _configuration["Union:ConnStr"].ToString();
             signKey = _configuration["JDBook:SignValue"].ToString();
+            orgId= _configuration["JDBook:orgId"].ToString();
         }
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="CardNo">学号</param>
+        /// <param name="CardNo">学号 = "2022006139" 9667ABDE5CB42C3B3E963F34EA7AA109 3239 E46473FB7628E5DB8D3265EC7552B14E</param>
         /// <param name="PWD">密码</param>
         /// <returns></returns>
         [HttpGet]
         [Route("login")]
-        public Msg Login(string CardNo= "2022006139", string PWD = "2022006139" )
+        public Msg Login(string CardNo, string PWD ,string orgId,string sign)
         {
-
             Msg msg = new Msg();
             msg.Code = -1;
+            //鉴权
+            if (sign != Tools.Tools.md5(orgId + CardNo + signKey))
+            {
+                msg.Result = "无效的授权";
+                return msg;
+            }
+
             Reader_Login_Req req = new Reader_Login_Req();
             req.CardNo = CardNo;
             req.PWD= PWD;
