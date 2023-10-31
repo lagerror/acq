@@ -1,11 +1,20 @@
+using acq.Tools;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+//增加调用日志过滤器
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add(typeof(RequestLoggingFilter));
+});
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+//增加serilog日志
+builder.Host.AddSerilLog();
 
 var app = builder.Build();
 
