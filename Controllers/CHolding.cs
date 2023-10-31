@@ -18,20 +18,6 @@ namespace acq.Controllers
             _configuration = configuration;
             connStr=_configuration["Interlib:ConnStr"].ToString();
         }
-        // GET: api/<CHolding>
-        [HttpGet]
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }
-
-        // GET api/<CHolding>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
         // POST api/<CHolding>
         [HttpPost]
         [Route("Exist")]
@@ -64,7 +50,16 @@ namespace acq.Controllers
                     conn.Open();
                     using (OracleCommand comm = conn.CreateCommand())
                     {
-                        string commStr = "select curlocal,barcode from holding left join biblios on biblios.bookrecno = holding.bookrecno where isbn = :isbn and holding.orglib = 'CD'";
+                        ////title author pubdate publisher price page recno bookrecno orglib orglocal state
+
+                        string commStr = "select  biblios.title,biblios.author,biblios.pubdate,biblios.publisher,biblios.price, biblios.page, holding.recno,holding.bookrecno,holding.orglib,holding.orglocal,holding.state from bib_isbnidx " +
+                                            "left join biblios on bib_isbnidx.bookrecno = biblios.bookrecno " +
+                                            "left join holding on biblios.bookrecno = holding.bookrecno " +
+                                                "where bib_isbnidx.isbn = :isbn";
+
+
+
+
                         comm.CommandText = commStr;
                         OracleParameter[] pars = new OracleParameter[] {
                             new OracleParameter("isbn",req.ISBN)
@@ -99,16 +94,6 @@ namespace acq.Controllers
             return msg;
         }
 
-        // PUT api/<CHolding>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<CHolding>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
+       
     }
 }

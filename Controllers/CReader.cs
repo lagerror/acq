@@ -2,8 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
 using System.Data.SqlClient;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using acq.Tools;
+//   string SignValue = "z02rw4JfsgXA1GUh";
+//   string orgid = "3239";
 
 namespace acq.Controllers
 {
@@ -13,9 +14,11 @@ namespace acq.Controllers
     {
         private IConfiguration _configuration;
         private string connStr = "";
+        private string signKey = "";
         public CReader(IConfiguration configuration) {
             _configuration = configuration;
             connStr = _configuration["Union:ConnStr"].ToString();
+            signKey = _configuration["JDBook:SignValue"].ToString();
         }
         /// <summary>
         /// 
@@ -40,6 +43,7 @@ namespace acq.Controllers
                 msg.Result = String.Format("参数设置错误：{0}", "参数为空");
                 return msg;
             }
+
             //读取数据库
             try
             {
@@ -55,24 +59,32 @@ namespace acq.Controllers
                         };
                         comm.Parameters.AddRange(pars);
                         OracleDataReader rd = comm.ExecuteReader();
-                        string result = "";
-                        while (rd.Read())
+                        //查询用户
+                        if (rd.Read())
                         {
-                            Reader_Login_Msg_Obj obj=new Reader_Login_Msg_Obj();
-                            obj.CardNo =  rd["xh"].ToString();
+                            Reader_Login_Msg_Obj obj = new Reader_Login_Msg_Obj();
+                            obj.CardNo = rd["xh"].ToString();
                             obj.UserName = rd["xm"].ToString();
                             obj.Department = rd["xqmc"] + "|" + rd["zymc"] + "|" + rd["bjmc"];
                             obj.Job = rd["xmmc"].ToString();
+                            if (req.PWD == Tools.Tools.md5( rd["sfzjh"].ToString().Substring(12,6) + signKey))
+                            {
+                                msg.Code = 1;
+                                msg.Result = "成功";
+                                msg.Obj = obj;
+                            }
+                            else
+                            {
+                                msg.Code = -1;
+                                msg.Result = "不匹配";
+                                msg.Obj =null;
+
+                            }
                         }
-                        if (result == "")
+                        else   //没有查询到对应的用户
                         {
-                            msg.Code = 1;
-                            msg.Result = "不存在可购买";
-                        }
-                        else
-                        {
-                            msg.Code = 1;
-                            msg.Result = result;
+                            msg.Code = -1;
+                            msg.Result = "没有此用户";
                         }
                     }
                     conn.Close();
@@ -86,7 +98,5 @@ namespace acq.Controllers
             }
             return msg;
         }
-
-       
     }
 }
