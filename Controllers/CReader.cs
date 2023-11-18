@@ -61,39 +61,77 @@ namespace acq.Controllers
                     conn.Open();
                     using (OracleCommand comm = conn.CreateCommand())
                     {   //'2022006139'
-                        string commStr = "select xh,xm,sfzjh,xqmc,zymc,bjmc,xmmc from usr_zsj.v_xx_xsxx where xh=:xh and sfzx='是'";
-                        comm.CommandText = commStr;
-                        OracleParameter[] pars = new OracleParameter[] {
-                            new OracleParameter(":xh",req.CardNo)
-                        };
-                        comm.Parameters.AddRange(pars);
-                        OracleDataReader rd = comm.ExecuteReader();
-                        //查询用户
-                        if (rd.Read())
-                        {
-                            Reader_Login_Msg_Obj obj = new Reader_Login_Msg_Obj();
-                            obj.CardNo = rd["xh"].ToString();
-                            obj.UserName = rd["xm"].ToString();
-                            obj.Department = rd["xqmc"] + "|" + rd["zymc"] + "|" + rd["bjmc"];
-                            obj.Job = rd["xmmc"].ToString();
-                            if (req.PWD == Tools.Tools.md5( rd["sfzjh"].ToString().Substring(12,6) + signKey))
+
+                            string commStr = "select xh,xm,sfzjh,xqmc,zymc,bjmc,xmmc from usr_zsj.v_xx_xsxx where xh=:xh and sfzx='是'";
+                            comm.CommandText = commStr;
+                            OracleParameter[] pars = new OracleParameter[] {
+                                            new OracleParameter(":xh",req.CardNo)
+                                        };
+                         comm.Parameters.AddRange(pars);
+                        OracleDataReader rd = null;
+                         //学生   
+                        if (req.CardNo.Length > 6)
+                        {   
+                            rd = comm.ExecuteReader();
+                            //查询用户
+                            if (rd.Read())
                             {
-                                msg.Code = 1;
-                                msg.Result = "成功";
-                                msg.Obj = obj;
+                                Reader_Login_Msg_Obj obj = new Reader_Login_Msg_Obj();
+                                obj.CardNo = rd["xh"].ToString();
+                                obj.UserName = rd["xm"].ToString();
+                                obj.Department ="学生"+ rd["xqmc"] + "|" + rd["zymc"] + "|" + rd["bjmc"];
+                                obj.Job = rd["xmmc"].ToString();
+                                if (req.PWD == Tools.Tools.md5(rd["sfzjh"].ToString().Substring(12, 6) + signKey))
+                                {
+                                    msg.Code = 1;
+                                    msg.Result = "成功";
+                                    msg.Obj = obj;
+                                }
+                                else
+                                {
+                                    msg.Code = -1;
+                                    msg.Result = "不匹配";
+                                    msg.Obj = null;
+
+                                }
+                            }
+                            else   //没有查询到对应的用户
+                            {
+                                msg.Code = -1;
+                                msg.Result = "没有此用户";
+                            }
+                        }
+                        //教工
+                        if (req.CardNo.Length == 6)
+                        {
+                            commStr = "select zgh,xm,dwmc,sfzjh from usr_zsj.v_tsg_jzgxx WHERE zgh=:xh";
+                            comm.CommandText = commStr;
+                            rd = comm.ExecuteReader();
+                            if (rd.Read())
+                            {
+                                Reader_Login_Msg_Obj obj = new Reader_Login_Msg_Obj();
+                                obj.CardNo = rd["zgh"].ToString();
+                                obj.UserName = rd["xm"].ToString();
+                                obj.Department = "教职工|" + rd["dwmc"] ;
+                                obj.Job = "教职工";
+                                if (req.PWD == Tools.Tools.md5(rd["sfzjh"].ToString().Substring(12, 6) + signKey))
+                                {
+                                    msg.Code = 1;
+                                    msg.Result = "成功";
+                                    msg.Obj = obj;
+                                }
+                                else
+                                {
+                                    msg.Code = -1;
+                                    msg.Result = "不匹配";
+                                    msg.Obj = null;
+                                }
                             }
                             else
                             {
                                 msg.Code = -1;
-                                msg.Result = "不匹配";
-                                msg.Obj =null;
-
+                                msg.Result = "没有此用户";
                             }
-                        }
-                        else   //没有查询到对应的用户
-                        {
-                            msg.Code = -1;
-                            msg.Result = "没有此用户";
                         }
                     }
                     conn.Close();
@@ -103,7 +141,6 @@ namespace acq.Controllers
             {
                 msg.Code = -1;
                 msg.Result = String.Format("数据库操作异常：{0}", ex.Message);
-
             }
             return msg;
         }
