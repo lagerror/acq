@@ -29,7 +29,24 @@ namespace acq.Model
         public string STATE { set; get; } // 签收状态 STATE 是 Varchar(32) 签收类型(1-签收,2-异常(退货等没有签收的))
         public string  Date { set; get; }  //签收时间 Date 是 Varchar(32) 签收时间
     }
-
+    /*
+     修改后的订单签收通知并借阅到读者证上
+     */
+    public class Order_sign_loan_Req
+    {
+        public string certId { set; get; }
+        public string signDate { set; get; }
+        public string? batch { set; get; }
+        public string? bookId { set; get; }
+        public string? isbn { set; get; }
+        public string? bookName { set; get; }
+        public string? author { set; get; }
+        public string? publisher { set; get; }
+        public string? pubTime    { set; get;}
+        public string? price { set; get; }
+        public string? remark { set; get; }
+        public string? phone { set; get; }
+    }
     /*
      7、订单下单接口（汇采平台平台提供）
      */
