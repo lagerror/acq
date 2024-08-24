@@ -1,0 +1,54 @@
+﻿create or replace trigger trg_push_circulation_notice 
+after insert on log_cir for each row 
+declare RDLIB READER.RDLIB%TYPE; 
+RDID READER.RDID%TYPE; 
+BARNO HOLDING.RECNO%TYPE; 
+BARCODE HOLDING.BARCODE%TYPE; 
+BOOKRECNO HOLDING.BOOKRECNO%TYPE; 
+TITLE BIBLIOS.TITLE%TYPE; 
+USERID P_OPERATOR.LOGINID%TYPE; 
+USERLIB P_OPERATOR.LIBCODE%TYPE; 
+JOB_TYPE NVARCHAR2(20);
+ LOAN_TIME LOAN_WORK.LOANDATE%TYPE; 
+RETURN_TIME LOAN_WORK.RETURNDATE%TYPE;
+begin 
+	if inserting then 
+		if :NEW.LOGTYPE = '30001' 
+		THEN JOB_TYPE:= '借书提醒'; 
+		select loandate,returndate into LOAN_TIME,RETURN_TIME from LOAN_WORK
+			 where RDID = :new.DATA2 and barcode=:new.DATA3 and ROWNUM=1;
+		end if; 
+
+		if :NEW.LOGTYPE = '30002' 
+		THEN JOB_TYPE:= '还书提醒'; 
+		LOAN_TIME:=:NEW.LOAN_TIME; RETURN_TIME:=:NEW.RETURN_TIME;
+		end if; 
+
+		if :NEW.LOGTYPE = '30001' or :NEW.LOGTYPE = '30002' 
+		THEN 
+			begin 
+				select min(RDLIB) into RDLIB from READER where RDID = :new.DATA2 and ROWNUM=1; 
+				if RDLIB is null THEN 
+					RDLIB:='null'; 
+				end if; 
+
+				select min(LIBCODE) into USERLIB from P_OPERATOR where LOGINID = :new.USERID and ROWNUM=1; 
+				
+				if USERLIB is null THEN 
+					USERLIB:='null'; 
+				end if; 
+				
+				select min(h.RECNO),min(h.BARCODE),min(h.BOOKRECNO),min(b.TITLE) into BARNO,BARCODE,BOOKRECNO,TITLE from HOLDING h,BIBLIOS b where h.barcode=:new.DATA3 and b.BOOKRECNO=h.BOOKRECNO and rownum = 1;
+				
+				if BOOKRECNO is null THEN
+					 BOOKRECNO:='0'; 
+				end if;
+
+				 insert into push_circulation_notice ID,RDID,RDLIB,USERID,USERLIB,BARNO,BARCODE,BOOKRECNO,TITLE,LOGTYPE,REGTIME,LOAN_TIME,RETURN_TIME,JOB_TYPE) values(:NEW.ID,:new.DATA2,RDLIB,:new.USERID,USERLIB,BARNO,:new.DATA3,BOOKRECNO,TITLE,:NEW.LOGTYPE,:NEW.REGTIME,LOAN_TIME,RETURN_TIME,JOB_TYPE); 
+				
+				EXCEPTION WHEN NO_DATA_FOUND THEN 
+					dbms_output.put_line('捕获到异常');
+				end;
+		end if;
+	end if;
+end;

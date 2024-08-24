@@ -49,6 +49,10 @@ namespace acq.Controllers
             
             Msg msg = new Msg();
             msg.Code = -1;
+            if (orgId == "shareBook")
+            {
+                signKey = "LibSharefsgXA1GUh";
+            }
             //鉴权
             if (sign != Tools.Tools.md5(orgId + CardNo + signKey))
             {
@@ -183,7 +187,7 @@ namespace acq.Controllers
                                 Reader_Login_Msg_Obj obj = new Reader_Login_Msg_Obj();
                                 obj.CardNo = rd["xh"].ToString();
                                 obj.UserName = rd["xm"].ToString();
-                                obj.Department ="学生"+ rd["xqmc"] + "|" + rd["zymc"] + "|" + rd["bjmc"];
+                                obj.Department ="学生"+ "|"+ rd["xqmc"] + "|" + rd["zymc"] + "|" + rd["bjmc"];
                                 obj.Job = rd["xmmc"].ToString();
                                 msg.Code = 1;
                                 msg.Obj = obj;
