@@ -26,8 +26,11 @@ namespace acq.Controllers
         /*9787506365284
          * B034BB2F6B50CF5CC41D3C63A7EAF9F6
          {9787010253671(有预定)
+        EA11B1624413A5BDB527C8E4C6F431FB
         7FF454266071B4FB60157E79F3C9B350
          9787106054168",（有馆藏）
+        48CF50702CFD509FA2B6D6D1B7BCD31D
+        498A20D86CB312C3F578FBE431067F8A
         7276184DC005B99B79B5814BC8F05D1C
         3239
          */
@@ -45,6 +48,15 @@ namespace acq.Controllers
                 return msg;
             }
             //鉴权
+            if (orgId == "shareBook")
+            {
+                signKey = "LibSharefsgXA1GUh";
+            }
+            else if (orgId == "keledge")
+            {
+                signKey = "keledgeeA1GUfsXgh";
+            }
+
             if (sign != Tools.Tools.md5(orgId + req.ISBN + signKey))
             {
                 msg.Result = "无效的授权";

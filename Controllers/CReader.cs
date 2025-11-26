@@ -53,6 +53,11 @@ namespace acq.Controllers
             {
                 signKey = "LibSharefsgXA1GUh";
             }
+            else if (orgId == "keledge")
+            {
+                signKey = "keledgeeA1GUfsXgh";
+            }
+
             //鉴权
             if (sign != Tools.Tools.md5(orgId + CardNo + signKey))
             {
@@ -136,9 +141,9 @@ namespace acq.Controllers
                         }
                         else
                         {
-                            passwordGlobal = password.ToString();
+                            passwordGlobal =Tools.Tools.md5(password.ToString()+ signKey).ToUpper();
                             //只有在此条件下继续读取读者信息
-                            if (req.PWD != Tools.Tools.md5(passwordGlobal + signKey))
+                            if (req.PWD != passwordGlobal)
                             {
                                 msg.Result = string.Format("密码不匹配", req.CardNo);
                                 _logger.ForContext("RequestJson", string.Format("{0}", CardNo))
@@ -231,6 +236,82 @@ namespace acq.Controllers
             }
             
             return msg;
+        }
+
+        [HttpGet]
+        [Route("SearchByCardId")]
+        public Msg SearchByCardId(string cardId,string orgId, string sign)
+        {
+            Msg msg = new Msg();
+            msg.Code = -1;
+            //鉴权
+            if (sign != Tools.Tools.md5(orgId + cardId + signKey))
+            {
+                msg.Result = "无效的授权";
+                _logger.ForContext("RequestJson", string.Format("{0}", cardId))
+                   .ForContext("ResponseJson", string.Format("{0}", orgId))
+                   .Warning(msg.Result);
+            }
+            //读取学校数据库获取用户详细信息
+            try
+            {
+                using (OracleConnection conn = new OracleConnection(connStr))
+                {
+                    conn.Open();
+                    using (OracleCommand comm = conn.CreateCommand())
+                    {   //'2022006139'
+
+                        string commStr = "select xh,xm from usr_zsj.v_xx_xsxx where kxlh=:kxlh and sfzx='是'";
+                        comm.CommandText = commStr;
+                        OracleParameter[] pars = new OracleParameter[] {
+                                            new OracleParameter(":kxlh",cardId)
+                                        };
+                        comm.Parameters.AddRange(pars);
+                        OracleDataReader rd = null;
+                        //查询学校数据库中学生   
+                            rd = comm.ExecuteReader();
+                        //查询用户
+                        if (rd.Read())
+                        {
+                            var data = new
+                            {
+                                CardNo = rd["xh"].ToString(),
+                                UserName = rd["xm"].ToString(),
+                                UserType = "学生"
+                            };
+                            msg.Code = 0;
+                            msg.Obj = data;
+                            return msg;
+                        }
+                           
+                        //查询学校数据库中教工
+                        commStr = "select zgh,xm from usr_zsj.v_tsg_jzgxx where kxlh=:kxlh";
+                        comm.CommandText = commStr;
+                        rd = comm.ExecuteReader();
+                        if (rd.Read())
+                        {
+                            var data1 = new
+                            {
+                                CardNo = rd["zgh"].ToString(),
+                                UserName = rd["xm"].ToString(),
+                                UserType= "教职工"
+                            };
+                           
+                            msg.Code = 0;
+                            msg.Obj = data1;
+                            return msg;
+                        }
+                    }
+                    conn.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                msg.Code = -1;
+                msg.Result = String.Format("学校数据库操作异常：{0}", ex.Message);
+            }
+            return msg;
+
         }
     }
 }
